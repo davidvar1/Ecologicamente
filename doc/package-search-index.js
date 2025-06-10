@@ -1,0 +1,1 @@
+packageSearchIndex = [{"l":"All Packages","u":"allpackages-index.html"},{"l":"com.ecologicamente.controlador"},{"l":"com.ecologicamente.test"},{"l":"com.ecologicamente.vista"}];updateSearchResults();
