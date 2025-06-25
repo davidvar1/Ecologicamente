@@ -1,93 +1,106 @@
+
 package com.ecologicamente.vista;
 
-import com.ecologicamente.modelo.Carta;
+import com.ecologicamente.controlador.JuegoControlador;
 import com.ecologicamente.modelo.Juego;
 import com.ecologicamente.modelo.Tablero;
-import com.ecologicamente.controlador.JuegoControlador;
-
 import javafx.application.Application;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-/**
- * Clase JuegoView: representa la interfaz gráfica del juego "EcoLógicamente".
- * Se encarga de mostrar el tablero de cartas, el contador de intentos y 
- * conectar la vista con el controlador.
- */
 public class JuegoView extends Application {
 
-    private Juego juego;
-    private Label intentosLabel;
-    private Button[] botones;
+    public static int pares = 6;
+    public static int modoJugadores = 2;
+
+    public static final Map<String, String> iconos = Map.ofEntries(
+        Map.entry("arbol", "🌳"), Map.entry("agua", "💧"), Map.entry("reciclaje", "♻️"),
+        Map.entry("papel", "📄"), Map.entry("planta", "🪴"), Map.entry("sol", "☀️"),
+        Map.entry("hoja", "🍃"), Map.entry("fuego", "🔥"), Map.entry("aire", "🌬️"),
+        Map.entry("nube", "☁️"), Map.entry("tierra", "🌍"), Map.entry("semilla", "🌱"),
+        Map.entry("eco", "🌿"), Map.entry("basura", "🗑️"), Map.entry("botella", "🥤"),
+        Map.entry("viento", "💨"), Map.entry("luz", "💡"), Map.entry("flor", "🌸")
+    );
 
     @Override
     public void start(Stage primaryStage) {
-        // Lista de nombres que representan las imágenes de las cartas (6 pares)
-        List<String> imagenes = Arrays.asList("arbol", "agua", "reciclaje", "papel", "planta", "sol");
+        List<String> imagenes = new ArrayList<>(iconos.keySet());
+        Collections.shuffle(imagenes);
+        List<String> usadas = imagenes.subList(0, pares);
 
-        // Crear el modelo: 6 pares de cartas (12 cartas en total)
-        Tablero tablero = new Tablero(6, imagenes);
-        juego = new Juego(tablero);
+        Tablero tablero = new Tablero(pares, usadas);
+        Juego juego = new Juego(tablero);
 
-        // Crear la imagen principal de la interfaz
         BorderPane root = new BorderPane();
+        VBox topBox = new VBox(5);
+        topBox.setPadding(new Insets(10));
+        topBox.setAlignment(Pos.TOP_CENTER);
 
-        // Crea y ubica la etiqueta para mostrar el número de intentos
-        intentosLabel = new Label("Intentos: 0");
-        root.setTop(intentosLabel);
-        BorderPane.setMargin(intentosLabel, new Insets(10));
+        Label titulo = new Label("🌿 EcoLógicamente 🌿");
+        titulo.setStyle("-fx-font-size: 24px; -fx-font-weight: bold; -fx-text-fill: #2e7d32;");
+        Label intentosLabel = new Label("Intentos: 0");
+        Label turnoLabel = new Label("Turno: Jugador 1");
+        Label puntajeLabel = new Label("Puntaje - J1: 0 | J2: 0");
 
-        // Crea el contenedor en una cuadrícula para las cartas (botones)
+        topBox.getChildren().addAll(titulo, intentosLabel, turnoLabel, puntajeLabel);
+        root.setTop(topBox);
+
         GridPane grid = new GridPane();
-        grid.setHgap(5); // espacio horizontal entre botones
-        grid.setVgap(5); // espacio vertical entre botones
+        grid.setHgap(5);
+        grid.setVgap(5);
+        grid.setAlignment(Pos.CENTER);
         grid.setPadding(new Insets(10));
 
-        // Crea un arreglo de botones que representan las cartas
-        botones = new Button[tablero.tamano()];
+        Button[] botones = new Button[tablero.tamano()];
+        int columnas = (int) Math.ceil(Math.sqrt(tablero.tamano()));
+        int filas = (int) Math.ceil((double) tablero.tamano() / columnas);
 
-        int columnas = 4;
-        int filas = 3; 
-
-        // Inicializa cada botón y lo ubica en la cuadrícula
         for (int i = 0; i < tablero.tamano(); i++) {
-            Button boton = new Button("❓"); // símbolo para carta oculta
-            boton.setMinSize(80, 80);       // tamaño fijo de cada carta
+            Button boton = new Button("❓");
+            boton.setPrefSize(70, 70);
             botones[i] = boton;
             grid.add(boton, i % columnas, i / columnas);
         }
 
-        // Crear el controlador y enlazar los botones y etiqueta de intentos
-        JuegoControlador controlador = new JuegoControlador(juego, botones, intentosLabel);
+        JuegoControlador controlador = new JuegoControlador(
+            juego, botones, intentosLabel, turnoLabel, puntajeLabel, modoJugadores
+        );
 
-        // Asociar la acción de clic a cada botón de carta
         for (int i = 0; i < botones.length; i++) {
-            final int index = i; 
+            final int index = i;
             botones[i].setOnAction(e -> controlador.seleccionar(index));
         }
 
-        // Ubica el tablero en el centro de la ventana
         root.setCenter(grid);
-
-        // Crea y muestra la escena principal del juego
-        Scene scene = new Scene(root, 400, 400);
+        Scene scene = new Scene(root, 100 + columnas * 80, 150 + filas * 90);
         primaryStage.setTitle("EcoLógicamente - Juego de Memoria");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
 
-    /**
-     * Método principal para lanzar la aplicación JavaFX.
-     */
+    public static void iniciarDesdeOtraVista() {
+        Platform.runLater(() -> {
+            try {
+                new JuegoView().start(new Stage());
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
     public static void main(String[] args) {
         launch(args);
     }
+
 }
+

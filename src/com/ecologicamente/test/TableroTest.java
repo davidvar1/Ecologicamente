@@ -29,7 +29,7 @@ public class TableroTest {
 
         Set<String> ids = new HashSet<>();
         for (Carta carta : tablero.getCartas()) {
-            ids.add(carta.getIdImagen());
+            ids.add(carta.getImagen());
         }
 
         // Debería haber solo 3 tipos de imágenes

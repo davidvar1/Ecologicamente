@@ -1,104 +1,108 @@
+
 package com.ecologicamente.controlador;
 
-import com.ecologicamente.modelo.Carta;
 import com.ecologicamente.modelo.Juego;
+import com.ecologicamente.vista.JuegoView;
+import javafx.animation.PauseTransition;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.application.Platform;
+import javafx.util.Duration;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
-/**
- * Clase JuegoControlador: se encarga de manejar los eventos del usuario (clics en cartas)
- * y conectar la lógica del modelo con la vista en el juego.
- */
 public class JuegoControlador {
 
-    private Juego juego;
-    private Button[] botones;
-    private Label intentosLabel;
-    private boolean bloqueado = false;
+    private final Juego juego;
+    private final Button[] botones;
+    private final Label intentosLabel;
+    private final Label turnoLabel;
+    private final Label puntajeLabel;
+    private final int modoJugadores;
 
-    private int primeraCarta = -1;
-    private int segundaCarta = -1;
+    private int intentos = 0;
+    private int turnoJugador = 1;
+    private int puntajeJugador1 = 0;
+    private int puntajeJugador2 = 0;
 
-    /**
-     * Constructor del controlador del juego.
-     * @param juego Objeto que contiene la lógica del juego.
-     * @param botones Arreglo de botones que representan las cartas.
-     * @param intentosLabel Etiqueta para mostrar el número de intentos.
-     */
-    public JuegoControlador(Juego juego, Button[] botones, Label intentosLabel) {
+    private int primeraSeleccion = -1;
+    private int segundaSeleccion = -1;
+    private boolean bloqueo = false;
+
+    public JuegoControlador(Juego juego, Button[] botones, Label intentosLabel, Label turnoLabel, Label puntajeLabel, int modoJugadores) {
         this.juego = juego;
         this.botones = botones;
         this.intentosLabel = intentosLabel;
+        this.turnoLabel = turnoLabel;
+        this.puntajeLabel = puntajeLabel;
+        this.modoJugadores = modoJugadores;
+        actualizarEtiquetas();
     }
 
-    /**
-     * Método llamado cuando el usuario selecciona una carta.
-     * Controla el flujo de selección de cartas y maneja emparejamientos.
-     * @param index Índice del botón presionado (carta seleccionada).
-     */
+    private void actualizarEtiquetas() {
+        intentosLabel.setText("Intentos: " + intentos);
+        if (modoJugadores == 2) {
+            turnoLabel.setText("Turno: Jugador " + turnoJugador);
+            puntajeLabel.setText("Puntaje - J1: " + puntajeJugador1 + " | J2: " + puntajeJugador2);
+        } else {
+            turnoLabel.setText("");
+            puntajeLabel.setText("Pares encontrados: " + puntajeJugador1);
+        }
+    }
+
     public void seleccionar(int index) {
-        if (bloqueado) return;
-        if (index == primeraCarta || index == segundaCarta) return;
+        if (bloqueo || juego.estaEmparejada(index)) return;
 
-        Carta carta = juego.getTablero().getCarta(index);
-        if (carta.estaDescubierta() || carta.estaEmparejada()) return;
+        String nombreImagen = juego.getImagen(index);
+        botones[index].setText(JuegoView.iconos.get(nombreImagen) + "\n" + nombreImagen);
+        botones[index].setStyle("-fx-background-color: #c8e6c9; -fx-font-size: 16px;");
 
-        carta.descubrir();
-        botones[index].setText(carta.getIdImagen());
-        botones[index].setDisable(true);
-
-        if (primeraCarta == -1) {
-            primeraCarta = index;
+        if (primeraSeleccion == -1) {
+            primeraSeleccion = index;
         } else {
-            segundaCarta = index;
-            bloqueado = true;
-            juego.seleccionarCarta(primeraCarta);
-            juego.seleccionarCarta(segundaCarta);
+            segundaSeleccion = index;
+            bloqueo = true;
+            intentos++;
+            actualizarEtiquetas();
 
-            intentosLabel.setText("Intentos: " + juego.getIntentos());
+            PauseTransition pausa = new PauseTransition(Duration.seconds(1));
+            pausa.setOnFinished(e -> {
+                if (juego.seleccionar(primeraSeleccion, segundaSeleccion)) {
+                    botones[primeraSeleccion].setDisable(true);
+                    botones[segundaSeleccion].setDisable(true);
+                    if (modoJugadores == 2) {
+                        if (turnoJugador == 1) puntajeJugador1++;
+                        else puntajeJugador2++;
+                    } else {
+                        puntajeJugador1++;
+                    }
+                } else {
+                    botones[primeraSeleccion].setText("❓");
+                    botones[primeraSeleccion].setStyle("");
 
-            // Temporizador para pausar antes de verificar emparejamiento
-            Timer timer = new Timer();
-            timer.schedule(new TimerTask() {
-                @Override
-                public void run() {
-                    Platform.runLater(() -> verificarEmparejamiento());
+                    botones[segundaSeleccion].setText("❓");
+                    botones[segundaSeleccion].setStyle("");
+
+                    if (modoJugadores == 2) {
+                        turnoJugador = (turnoJugador == 1) ? 2 : 1;
+                    }
                 }
-            }, 1000); // Espera de 1 segundo
-        }
-    }
 
-    /**
-     * Verifica si las dos cartas seleccionadas forman una pareja.
-     * Si no coinciden, las vuelve a ocultar. Si coinciden, las marca visualmente.
-     */
-    private void verificarEmparejamiento() {
-        Carta c1 = juego.getTablero().getCarta(primeraCarta);
-        Carta c2 = juego.getTablero().getCarta(segundaCarta);
+                actualizarEtiquetas();
+                primeraSeleccion = -1;
+                segundaSeleccion = -1;
+                bloqueo = false;
 
-        if (!c1.esIgual(c2)) {
-            c1.ocultar();
-            c2.ocultar();
-            botones[primeraCarta].setText("❓");
-            botones[segundaCarta].setText("❓");
-            botones[primeraCarta].setDisable(false);
-            botones[segundaCarta].setDisable(false);
-        } else {
-            botones[primeraCarta].setStyle("-fx-background-color: lightgreen");
-            botones[segundaCarta].setStyle("-fx-background-color: lightgreen");
-        }
-
-        primeraCarta = -1;
-        segundaCarta = -1;
-        bloqueado = false;
-
-        if (juego.juegoTerminado()) {
-            intentosLabel.setText("¡Ganaste en " + juego.getIntentos() + " intentos!");
+                if (juego.terminado()) {
+                    String resultado;
+                    if (modoJugadores == 2) {
+                        if (puntajeJugador1 > puntajeJugador2) resultado = "Jugador 1 gana 🎉";
+                        else if (puntajeJugador2 > puntajeJugador1) resultado = "Jugador 2 gana 🎉";
+                        else resultado = "¡Empate!";
+                    } else {
+                        resultado = "¡Has encontrado todos los pares!";
+                    }
+                    intentosLabel.setText("Juego finalizado en " + intentos + " intentos. " + resultado);
+                }
+            });
+            pausa.play();
         }
     }
 }
-

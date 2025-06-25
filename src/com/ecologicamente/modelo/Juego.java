@@ -3,97 +3,63 @@ package com.ecologicamente.modelo;
 import java.util.List;
 
 /**
- * Controla la lógica del juego: turnos, intentos, emparejamientos y finalización.
+ * Clase que representa el estado del juego y gestiona la lógica de emparejamiento.
  */
 public class Juego {
     private Tablero tablero;
-    private Carta seleccionada1;
-    private Carta seleccionada2;
-    private int intentos;
+    private int parejasEncontradas;
 
-    /**
-     * Inicializa el juego con un tablero ya configurado.
-     * @param tablero Tablero que contiene las cartas del juego.
-     */
     public Juego(Tablero tablero) {
         this.tablero = tablero;
-        this.intentos = 0;
+        this.parejasEncontradas = 0;
     }
 
     /**
-     * Selecciona una carta por su índice.
-     * Si es la segunda carta, compara si forma pareja con la primera.
-     * @param index posición de la carta seleccionada.
-     * @return true si las cartas emparejan, false si no.
+     * Intenta emparejar dos cartas.
+     *
+     * @param i Índice de la primera carta.
+     * @param j Índice de la segunda carta.
+     * @return true si forman un par, false si no.
      */
-    public boolean seleccionarCarta(int index) {
-        Carta seleccionada = tablero.getCarta(index);
+    public boolean seleccionar(int i, int j) {
+        Carta c1 = tablero.getCarta(i);
+        Carta c2 = tablero.getCarta(j);
 
-        if (seleccionada.estaDescubierta() || seleccionada.estaEmparejada()) {
-            return false;
+        if (c1.esIgual(c2)) {
+            c1.marcarEmparejada();
+            c2.marcarEmparejada();
+            parejasEncontradas++;
+            return true;
         }
-
-        seleccionada.descubrir();
-
-        if (seleccionada1 == null) {
-            seleccionada1 = seleccionada;
-        } else {
-            seleccionada2 = seleccionada;
-            intentos++;
-
-            if (seleccionada1.esIgual(seleccionada2)) {
-                seleccionada1.marcarEmparejada();
-                seleccionada2.marcarEmparejada();
-                limpiarSeleccion();
-                return true;
-            }
-        }
-
         return false;
     }
 
     /**
-     * Si las cartas seleccionadas no son iguales, las vuelve a ocultar.
+     * Verifica si todas las parejas han sido encontradas.
+     *
+     * @return true si el juego ha terminado.
      */
-    public void ocultarNoEmparejadas() {
-        if (seleccionada1 != null && seleccionada2 != null) {
-            if (!seleccionada1.esIgual(seleccionada2)) {
-                seleccionada1.ocultar();
-                seleccionada2.ocultar();
-            }
-            limpiarSeleccion();
-        }
+    public boolean terminado() {
+        return parejasEncontradas == tablero.totalPares();
     }
 
     /**
-     * Limpia las cartas seleccionadas para permitir un nuevo turno.
+     * Devuelve el nombre de la imagen de una carta según el índice.
+     *
+     * @param index Índice de la carta.
+     * @return Nombre de la imagen.
      */
-    public void limpiarSeleccion() {
-        seleccionada1 = null;
-        seleccionada2 = null;
+    public String getImagen(int index) {
+        return tablero.getCarta(index).getImagen();
     }
 
     /**
-     * Verifica si el juego ha terminado (todas las cartas emparejadas).
-     * @return true si todas las cartas están emparejadas.
+     * Verifica si una carta ya fue emparejada.
+     *
+     * @param index Índice de la carta.
+     * @return true si ya está emparejada.
      */
-    public boolean juegoTerminado() {
-        return tablero.getCartas().stream().allMatch(Carta::estaEmparejada);
-    }
-
-    /**
-     * Obtiene el número de intentos realizados por el jugador.
-     * @return Número de intentos.
-     */
-    public int getIntentos() {
-        return intentos;
-    }
-
-    /**
-     * Obtiene el tablero actual del juego.
-     * @return objeto Tablero.
-     */
-    public Tablero getTablero() {
-        return tablero;
+    public boolean estaEmparejada(int index) {
+        return tablero.getCarta(index).estaEmparejada();
     }
 }

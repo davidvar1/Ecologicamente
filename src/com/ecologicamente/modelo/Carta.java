@@ -20,52 +20,34 @@ public class Carta {
         this.emparejada = false;
     }
 
-    public String getIdImagen() {
+    /**
+     * Devuelve el identificador de la imagen asociada a esta carta.
+     * @return ID de imagen.
+     */
+    public String getImagen() {
         return idImagen;
     }
 
-    /**
-     * Verifica si la carta está descubierta.
-     * @return true si está descubierta, false si está oculta.
-     */
     public boolean estaDescubierta() {
         return descubierta;
     }
 
-    /**
-     * Verifica si la carta ya fue emparejada.
-     * @return true si está emparejada.
-     */
     public boolean estaEmparejada() {
         return emparejada;
     }
 
-    /**
-     * Marca la carta como descubierta (volteada).
-     */
     public void descubrir() {
         this.descubierta = true;
     }
 
-    /**
-     * Vuelve a ocultar la carta (no emparejada).
-     */
     public void ocultar() {
         this.descubierta = false;
     }
 
-    /**
-     * Marca la carta como emparejada.
-     */
     public void marcarEmparejada() {
         this.emparejada = true;
     }
 
-    /**
-     * Compara esta carta con otra para verificar si son del mismo tipo.
-     * @param otra Otra carta para comparar.
-     * @return true si ambas cartas tienen el mismo ID de imagen.
-     */
     public boolean esIgual(Carta otra) {
         return this.idImagen.equals(otra.idImagen);
     }

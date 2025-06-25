@@ -52,4 +52,8 @@ public class Tablero {
     public Carta getCarta(int index) {
         return cartas.get(index);
     }
+    public int totalPares() {
+        return cartas.size() / 2;
+    }
+
 }
